@@ -17,8 +17,5 @@
    <nature>interactive</nature>
    <permissions/>
   </behaviorContent>
-  <dialogContent typeVersion="1.0" topicName="HelloWorld">
-   <topic path="HelloWorld/HelloWorld_enu.top" language="en_US"/>
-  </dialogContent>
  </contents>
 </package>

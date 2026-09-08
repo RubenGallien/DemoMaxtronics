@@ -123,7 +123,7 @@ class MyClass(GeneratedClass):
         prompt += 'Reponds en une seule courte phrase. '
         prompt += 'Ne jamais utiliser de Markdown'
 
-        url = "http://YOUR_SERV_IP:5001/api_proxy"
+        url = "http://localhost:5001/api_proxy"
 
         print(repr(prompt))
 

@@ -4,16 +4,12 @@
     <BehaviorDescriptions>
         <BehaviorDescription name="behavior" src="behavior_1" xar="behavior.xar" />
     </BehaviorDescriptions>
-    <Dialogs>
-        <Dialog name="HelloWorld" src="HelloWorld/HelloWorld.dlg" />
-    </Dialogs>
+    <Dialogs />
     <Resources>
         <File name="histo" src="behavior_1/histo.json" />
         <File name="patient" src="behavior_1/patient.json" />
     </Resources>
-    <Topics>
-        <Topic name="HelloWorld_enu" src="HelloWorld/HelloWorld_enu.top" topicName="HelloWorld" language="en_US" nuance="enu" />
-    </Topics>
+    <Topics />
     <IgnoredPaths />
     <Translations auto-fill="en_US">
         <Translation name="translation_en_US" src="translations/translation_en_US.ts" language="en_US" />
