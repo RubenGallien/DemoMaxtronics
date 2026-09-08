@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ChoregrapheProject xmlns="http://www.ald.softbankrobotics.com/schema/choregraphe/project.xsd" xar_version="3">
+  <Box name="root" id="-1" localization="8" tooltip="Root box of Choregraphe&apos;s behavior. Highest level possible." x="0" y="0">
+    <bitmap>media/images/box/root.png</bitmap>
+    <script language="4">
+      <content>
+        <![CDATA[]]>
+      </content>
+    </script>
+    <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+    <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+    <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+    <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+    <Timeline enable="0">
+      <BehaviorLayer name="behavior_layer1">
+        <BehaviorKeyframe name="keyframe1" index="1">
+          <Diagram>
+            <Box name="GET_DATA" id="1" localization="8" tooltip="This box contains a basic python script and can be used to create any python script box you would like.&#x0A;&#x0A;To edit its script, double-click on it." x="88" y="365">
+              <bitmap>media/images/box/box-python-script.png</bitmap>
+              <script language="4">
+                <content>
+                  <![CDATA[import json
+
+class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self)
+        self.tts = ALProxy('ALTextToSpeech')
+        self.memProxy = ALProxy("ALMemory","localhost",9559)
+
+    def onLoad(self):
+        print("BOITE CHARGEE")
+
+    def onUnload(self):
+        #put clean-up code here
+        pass
+
+    def onInput_onStart(self):
+
+        data = {}
+        cheminPatient = os.path.join(
+            self.behaviorAbsolutePath(),
+            self.getParameter("File name")
+        )
+
+        if os.path.exists(cheminPatient ):
+            with open(cheminPatient , "r") as f:
+                data = json.load(f)
+
+
+        print(data)
+        name = data["name"]
+        self.memProxy.insertData("patient", json.dumps(data))
+
+
+        hello = u'bonjour' + ' ' + name
+
+        self.tts.say(hello.encode("utf-8"))
+        self.onStopped()
+
+    def onInput_onStop(self):
+        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
+        self.onStopped()]]>
+                </content>
+              </script>
+              <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+              <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+              <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+              <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+              <Parameter name="File name" inherits_from_parent="0" content_type="4" value="patient.json" default_value="" tooltip="" id="5" />
+            </Box>
+            <Box name="ASK_AI" id="2" localization="8" tooltip="" x="548" y="207">
+              <bitmap>media/images/box/box-python-script.png</bitmap>
+              <script language="4">
+                <content>
+                  <![CDATA[# -*- coding: utf-8 -*-
+import json
+import urllib2
+import urllib
+
+def getTheme(history):
+    return "enfant"
+
+class MyClass(GeneratedClass):
+
+    def __init__(self):
+        GeneratedClass.__init__(self)
+        self.tts = ALProxy('ALTextToSpeech')
+        self.memProxy = ALProxy("ALMemory","localhost",9559)
+
+    def onLoad(self):
+        pass
+
+    def onUnload(self):
+        pass
+
+    def onInput_onStart(self):
+        val = self.memProxy.getData("myValueName1")
+        patient = self.memProxy.getData("patient")
+
+        patient = json.loads(patient)
+        val = json.loads(val)
+        historique = u", ".join(val)
+
+        metier_str = ", ".join(patient["jobs"]) if patient["jobs"] else "aucun"
+        enfants_str = ", ".join(patient["children"]) if patient["children"] else "aucun"
+
+        messageHist = "Sujets deja abordes parmi les sujets valides : {hist}. ".format(hist=historique)
+
+        prompt = "Tu es un assistant qui aide un robot compagnon a animer une conversation de reminiscence avec une personne agee en EHPAD. "
+        prompt += 'Profil : nom = {nom}, ancien metiers = {metier}, nom des enfants = {enfants}. '.format(
+            nom=patient["name"],
+            metier=metier_str,
+            enfants=enfants_str
+        )
+        prompt += 'SUJETS VALIDES (et uniquement ceux-ci) : nom, metier, enfant. '
+        prompt += messageHist
+        prompt += 'Genere une question ouverte, chaleureuse, jamais intrusive, qui invite a un souvenir positif. '
+        prompt += 'La question doit imperativement porter sur un des SUJETS VALIDES listes ci-dessus, et sur aucun autre theme (pas de sante, pas de loisirs, pas de famille au sens large, etc., sauf si ce theme figure explicitement dans SUJETS VALIDES). '
+        prompt += 'REGLE IMPORTANTE : tu ne dois pas poser une question dont le sujet principal appartient aux sujets deja abordes. Il est interdit de revenir sur ces sujets, meme avec une formulation differente, un angle different ou une question plus precise. Par exemple, si metier est deja aborde, tu ne dois poser aucune question concernant la carriere, le travail, la profession, le metier de medecin, les collegues ou les souvenirs professionnels. '
+        prompt += 'Avant de repondre, verifie mentalement que le sujet choisi : 1. fait partie de SUJETS VALIDES 2. n apparait PAS dans la liste des sujets deja abordes. '
+        prompt += 'Si tous les sujets valides ont deja ete abordes, alors reponds exactement : plus de question pour le moment. '
+        prompt += 'Ta question commencera toujours par le sujet que tu as choisi suivi de deux points avant ta question. Par exemple : metier: ... / enfant: ... '
+        prompt += 'Reponds en une seule courte phrase. '
+        prompt += 'Ne jamais utiliser de Markdown'
+
+        url = "http://YOUR_SERV_IP:5001/api_proxy"
+
+        print(repr(prompt))
+
+        data = json.dumps(prompt)
+        req = urllib2.Request(url, data)
+        req.add_header('Content-Type', 'application/json')
+        res = urllib2.urlopen(req).read()
+
+        self.tts.say(res)
+
+    def onInput_onStop(self):
+        self.onUnload()
+        self.onStopped()]]>
+                </content>
+              </script>
+              <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+              <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+              <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+              <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+            </Box>
+            <Box name="TODAY" id="3" localization="8" tooltip="" x="363" y="375">
+              <bitmap>media/images/box/box-python-script.png</bitmap>
+              <script language="4">
+                <content>
+                  <![CDATA[import time
+import locale
+from datetime import date
+
+
+class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self)
+        self.tts = ALProxy('ALTextToSpeech')
+        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+
+    def onLoad(self):
+        #put initialization code here
+        pass
+
+    def onUnload(self):
+        #put clean-up code here
+        pass
+
+    def onInput_onStart(self):
+        today = date.today()
+        message = today.strftime("Nous sommes le %A %d %B %Y")
+        self.tts.say(message)
+        self.onStopped()
+        pass
+
+    def onInput_onStop(self):
+        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
+        self.onStopped() #activate the output of the box]]>
+                </content>
+              </script>
+              <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+              <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+              <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+              <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+            </Box>
+            <Box name="GET_HISTO" id="6" localization="8" tooltip="" x="257" y="223">
+              <bitmap>media/images/box/box-python-script.png</bitmap>
+              <script language="4">
+                <content>
+                  <![CDATA[class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self)
+
+    def onLoad(self):
+        #put initialization code here
+        self.memProxy = ALProxy("ALMemory","localhost",9559)
+        pass
+
+    def onUnload(self):
+        #put clean-up code here
+        pass
+
+    def onInput_onStart(self):
+        #self.onStopped() #activate the output of the box
+
+        history = {}
+        cheminHisto = os.path.join(
+            self.behaviorAbsolutePath(),
+            self.getParameter("Histo")
+        )
+
+        if os.path.exists(cheminHisto):
+            with open(cheminHisto, "r") as f:
+                history = json.load(f)
+
+        print(history)
+        if history["history"]:
+            values = history["history"]
+            self.memProxy.insertData("myValueName1", json.dumps(values))
+        else:
+            self.memProxy.insertData("myValueName1", json.dumps([]))
+        print "The value of myValueName1 is", self.memProxy.getData("myValueName1")
+        self.onStopped()
+
+        pass
+
+    def onInput_onStop(self):
+        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
+        self.onStopped() #activate the output of the box]]>
+                </content>
+              </script>
+              <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+              <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+              <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+              <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+              <Parameter name="Histo" inherits_from_parent="0" content_type="4" value="histo.json" default_value="" tooltip="" id="5" />
+            </Box>
+            <Link inputowner="1" indexofinput="2" outputowner="0" indexofoutput="2" />
+            <Link inputowner="6" indexofinput="2" outputowner="1" indexofoutput="4" />
+            <Link inputowner="3" indexofinput="2" outputowner="6" indexofoutput="4" />
+            <Link inputowner="2" indexofinput="2" outputowner="3" indexofoutput="4" />
+          </Diagram>
+        </BehaviorKeyframe>
+      </BehaviorLayer>
+    </Timeline>
+  </Box>
+</ChoregrapheProject>
