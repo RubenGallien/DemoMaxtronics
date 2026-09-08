@@ -36,7 +36,7 @@ When creating the patient file, set the **project path** to the path you saved i
 
 ### 3. Run the Choregraphe project
 
-1. Import your Choregraphe project.
+1. Import your Choregraphe project `($PWD/helloChoregraph/Remember2.pml to open)`.
 2. Connect your robot.
 3. Open the **ASK_AI** box.
 4. Go to **line 52**.
